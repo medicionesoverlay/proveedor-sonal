@@ -1,0 +1,1446 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Mediciones Avanzadas - SONAL</title>
+	<style>
+		:root {
+			--bg: #000000;
+			--card: #1a1a1a;
+			--muted: #b0b0b0;
+			--text: #ffffff;
+			--accent: #00a9e0;
+			--accent-2: #00d4ff;
+			--danger: #ff4444;
+			--warning: #ffaa00;
+			--chip: #2d2d2d;
+			--success: #00c853;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0; padding: 24px; background: var(--bg); color: var(--text);
+			font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+		}
+		h1 { margin: 0 0 12px; font-size: 22px; }
+		h2 { margin: 0 0 8px; font-size: 18px; }
+		h3 { margin: 0 0 6px; font-size: 16px; }
+		
+		/* Dashboard */
+		.dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+		.stat-card { background: var(--card); border: 1px solid #333333; border-radius: 10px; padding: 16px; text-align: center; }
+		.stat-number { font-size: 24px; font-weight: bold; margin: 8px 0; }
+		.stat-label { color: var(--muted); font-size: 14px; }
+		.stat-pendiente { color: var(--warning); }
+		.stat-medido { color: var(--success); }
+		.stat-total { color: var(--accent); }
+		
+		/* Toolbar avanzado */
+		.toolbar { display: grid; grid-template-columns: 1fr 200px 200px 150px; gap: 12px; margin-bottom: 16px; }
+		.toolbar-advanced { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+		.search-group { display: flex; gap: 8px; }
+		input[type=search], input[type=text], select, input[type=date] {
+			background: var(--card); border: 1px solid #444444; color: var(--text);
+			padding: 10px 12px; border-radius: 8px; outline: none;
+		}
+		input[type=search] { flex: 1; }
+		
+		/* Botones */
+		button, label.btn { 
+			background: var(--accent); color: #ffffff; border: none; border-radius: 8px; 
+			padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: 14px;
+		}
+		label.btn.attach { display: inline-flex; align-items: center; gap: 6px; }
+		button.secondary { background: #3d3d3d; color: var(--text); }
+		button.danger { background: var(--danger); color: #ffffff; }
+		button.success { background: var(--success); color: #ffffff; }
+		button.warning { background: var(--warning); color: #000000; }
+		button.small { padding: 6px 8px; font-size: 12px; }
+		input[type=file] { display: none; }
+		
+		/* Badges y chips */
+		.badge { display: inline-block; background: var(--chip); color: var(--muted); padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+		.badge-pendiente { background: var(--warning); color: #2b1a0b; }
+		.badge-medido { background: var(--success); color: #0d2b0d; }
+		
+		/* Lista de activos */
+		.panel { background: var(--card); border: 1px solid #333333; border-radius: 10px; padding: 12px; min-height: 200px; }
+		.list { display: grid; gap: 8px; }
+		.item { 
+			display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; 
+			background: #0d0d0d; border: 1px solid #333333; border-radius: 8px; padding: 12px; 
+		}
+		.item-header { display: flex; align-items: center; gap: 8px; }
+		.item-meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+		.item-actions { display: flex; align-items: center; gap: 8px; }
+		
+		/* Detalle expandible */
+		.item-detail { 
+			display: none; grid-column: 1 / -1; margin-top: 12px; padding: 16px; 
+			background: #0a0a0a; border: 1px solid #444444; border-radius: 8px; 
+		}
+		.item-detail.expanded { display: block; }
+		
+		/* Formularios */
+		.form-group { margin-bottom: 12px; }
+		.form-group label { display: block; margin-bottom: 4px; font-size: 14px; color: var(--muted); }
+		textarea { 
+			width: 100%; background: var(--card); border: 1px solid #444444; color: var(--text);
+			padding: 8px; border-radius: 6px; resize: vertical; min-height: 60px;
+		}
+		
+		/* Fotos y geolocalización */
+		.photo-section { margin: 12px 0; }
+		.thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 8px; }
+		.thumb { 
+			position: relative; border: 1px solid #555555; border-radius: 6px; overflow: hidden; 
+			height: 80px; display: flex; align-items: center; justify-content: center; background: #0d0d0d; 
+		}
+		.thumb img, .thumb video { max-width: 100%; max-height: 100%; object-fit: cover; }
+		.thumb-info { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); color: white; font-size: 10px; padding: 2px 4px; }
+		.gps-info { background: #2d2d2d; padding: 8px; border-radius: 6px; margin: 8px 0; font-size: 12px; }
+		.gps-coords { color: var(--accent); font-family: monospace; }
+		
+		/* Validaciones */
+		.validation-status { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+		.validation-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+		.validation-ok { color: var(--success); }
+		.validation-warning { color: var(--warning); }
+		.validation-error { color: var(--danger); }
+		
+		/* Notas y comentarios */
+		.notes-section { margin: 12px 0; }
+		.note-item { 
+			background: #2d2d2d; padding: 8px; border-radius: 6px; margin: 4px 0; 
+			border-left: 3px solid var(--accent); 
+		}
+		.note-timestamp { color: var(--muted); font-size: 11px; }
+		
+		/* Auditoría */
+		.audit-log { 
+			background: #0a0a0a; padding: 8px; border-radius: 6px; margin: 8px 0; 
+			font-size: 11px; color: var(--muted); max-height: 100px; overflow-y: auto;
+		}
+		
+		/* Modales */
+		.modal { 
+			display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+			background: rgba(0,0,0,0.8); z-index: 1000; 
+		}
+		.modal-content { 
+			position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+			background: var(--card); border-radius: 10px; padding: 20px; max-width: 500px; width: 90%;
+		}
+		.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+		.modal-close { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; }
+		
+		/* Responsive */
+		@media (max-width: 900px) { 
+			.toolbar { grid-template-columns: 1fr; }
+			.toolbar-advanced { grid-template-columns: 1fr; }
+			.dashboard { grid-template-columns: repeat(2, 1fr); }
+			.search-group { flex-direction: column; }
+		}
+		@media (max-width: 600px) { 
+			body { padding: 16px; }
+			.dashboard { grid-template-columns: 1fr; }
+			.stat-number { font-size: 20px; }
+			.item { grid-template-columns: 1fr; padding: 10px; }
+			.item-header { flex-wrap: wrap; gap: 6px; }
+			.item-actions { margin-top: 8px; flex-wrap: wrap; gap: 6px; }
+			label.btn { width: 100%; text-align: center; }
+			.thumb-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+		}
+		
+		/* Utilidades */
+		.hidden { display: none !important; }
+		.text-center { text-align: center; }
+		.text-muted { color: var(--muted); }
+		.small { font-size: 12px; }
+		.footer { margin-top: 18px; color: var(--muted); font-size: 12px; }
+		.error-banner { background:#2d0a0a; color:#ffcccc; border:1px solid #5a1515; padding:8px; border-radius:8px; margin-bottom:10px; }
+		
+		/* Tags/Etiquetas */
+		.tag { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; margin: 2px; font-weight: 600; }
+		.tag-urgente { background: var(--danger); color: #fff; }
+		.tag-revisar { background: var(--warning); color: #000; }
+		.tag-completo { background: var(--success); color: #fff; }
+		.tag-selector { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+		
+		/* Comparador de fotos */
+		.photo-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+		.photo-compare img { width: 100%; border-radius: 8px; cursor: zoom-in; }
+		.photo-compare.zoomed img { cursor: zoom-out; transform: scale(1.5); transition: transform 0.3s; }
+		
+		/* Offline Queue */
+		.offline-queue { background: #2d2d2d; border-left: 4px solid var(--warning); padding: 12px; border-radius: 6px; margin: 12px 0; }
+		.offline-queue-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #444; }
+		.offline-queue-item:last-child { border-bottom: none; }
+		.sync-status { font-size: 11px; color: var(--warning); }
+		
+		/* Modo Tablet - Botones más grandes */
+		@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait),
+		       (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+			body { font-size: 16px; }
+			button, label.btn { padding: 14px 20px; font-size: 16px; min-height: 48px; }
+			input[type=search], input[type=text], select, input[type=date], textarea { 
+				padding: 14px; font-size: 16px; min-height: 48px; 
+			}
+			.thumb { height: 120px; }
+			.stat-card { padding: 20px; }
+			.stat-number { font-size: 32px; }
+		}
+	</style>
+</head>
+<body>
+	<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+		<h1 style="margin: 0;">Mediciones Avanzadas - <span class="badge">SONAL</span></h1>
+		<a href="https://medicionesoverlay.github.io/instructivo-proveedores" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+			📖 Ver Instructivo
+		</a>
+	</div>
+	
+	<!-- Dashboard de estadísticas -->
+	<div class="dashboard">
+		<div class="stat-card">
+			<div class="stat-label">Total Activos</div>
+			<div class="stat-number stat-total" id="statTotal">0</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Pendientes</div>
+			<div class="stat-number stat-pendiente" id="statPendientes">0</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Medidos</div>
+			<div class="stat-number stat-medido" id="statMedidos">0</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Rechazados</div>
+			<div class="stat-number" style="color:var(--danger);" id="statRechazados">0</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">% Aprobación</div>
+			<div class="stat-number" style="color:var(--success);" id="statAprobacion">0%</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-label">Progreso</div>
+			<div class="stat-number" id="statProgreso">0%</div>
+		</div>
+	</div>
+	
+	<!-- Toolbar principal -->
+	<div class="toolbar">
+		<div class="search-group">
+			<input id="q" type="search" placeholder="Buscar por Activo, clasificación, notas..." />
+			<button id="clearSearch" class="secondary small">Limpiar</button>
+		</div>
+		<select id="filterClasif"><option value="">Todas las clasificaciones</option></select>
+	<select id="filterEstado">
+		<option value="pendiente">Pendientes</option>
+		<option value="pendiente_revision">En Revisión</option>
+		<option value="medido">Medidos</option>
+		<option value="todos">Todos</option>
+	</select>
+		<button id="exportBtn" class="success">Exportar CSV</button>
+	</div>
+	
+	<!-- Toolbar avanzado -->
+	<div class="toolbar-advanced">
+		<div>
+			<label>Fecha desde:</label>
+			<input id="dateFrom" type="date" />
+		</div>
+		<div>
+			<label>Fecha hasta:</label>
+			<input id="dateTo" type="date" />
+		</div>
+	</div>
+	
+	<!-- Lista de activos -->
+	<div id="errorBanner" class="error-banner hidden"></div>
+	<div class="panel">
+		<h2>Listado de Activos</h2>
+		<div id="list" class="list"></div>
+		<div id="emptyMsg" class="text-muted small" style="margin-top:8px;"></div>
+	</div>
+	
+	<!-- Modal para notas -->
+	<div id="notesModal" class="modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3>Agregar Nota</h3>
+				<button class="modal-close" onclick="closeModal('notesModal')">&times;</button>
+			</div>
+			<div class="form-group">
+				<label>Tipo de nota:</label>
+				<select id="noteType">
+					<option value="observacion">Observación</option>
+					<option value="problema">Problema</option>
+					<option value="comentario">Comentario</option>
+					<option value="estado">Estado</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Comentario:</label>
+				<textarea id="noteText" placeholder="Describe la observación, problema o comentario..."></textarea>
+			</div>
+			<div style="display: flex; gap: 8px; justify-content: flex-end;">
+				<button onclick="closeModal('notesModal')" class="secondary">Cancelar</button>
+				<button onclick="saveNote()" class="success">Guardar</button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Queue offline (se muestra solo cuando hay elementos pendientes) -->
+	<div id="offlineQueue" class="offline-queue" style="display:none;">
+		<strong>⚠️ Operaciones pendientes de sincronizar:</strong>
+		<div id="queueList"></div>
+	</div>
+	
+	<div class="footer">
+		Los datos se sincronizan automáticamente con Firebase. 
+		<span id="connectionStatus">🟢 Conectado</span> | 
+		Última actualización: <span id="lastUpdate">-</span>
+	</div>
+
+	<!-- Firebase SDKs (compat) -->
+	<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+
+	<script>
+	// Inicializar Firebase (solo Firestore/Auth anónima)
+	const FIREBASE_CONFIG = {
+		apiKey: "AIzaSyCh8gYPHnQeYC3_SPV8QNctWVFAqYLMQeU",
+		authDomain: "medicionesodn.firebaseapp.com",
+		projectId: "medicionesodn",
+		appId: "1:650664889209:web:193469c06809de2f653da8",
+		measurementId: "G-SSWYNBTZ43"
+	};
+	try { firebase.initializeApp(FIREBASE_CONFIG); } catch (e) { /* ignore re-init */ }
+	const fbAuth = firebase.auth();
+	const fbDb = firebase.firestore();
+	
+	// Configurar timeouts y persistencia
+	fbDb.settings({
+		cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+		merge: true
+	});
+	fbDb.enablePersistence({ synchronizeTabs: true }).catch(err => {
+		console.warn('Persistencia no disponible:', err.code);
+	});
+	
+	let authReady = false;
+	let authTimeout = null;
+	
+	fbAuth.onAuthStateChanged(user => {
+		if (user) { 
+			authReady = true; 
+			if (authTimeout) clearTimeout(authTimeout);
+			console.log('✅ Firebase Auth listo');
+		}
+	});
+	
+	// Auth con timeout de 10 segundos
+	fbAuth.signInAnonymously().catch(err => {
+		console.error('❌ Error en auth:', err);
+		showError('Error de autenticación. Recarga la página.');
+	});
+	
+	authTimeout = setTimeout(() => {
+		if (!authReady) {
+			console.warn('⚠️ Auth tardando más de lo esperado');
+			showError('Conexión lenta. Verifica tu internet.');
+		}
+	}, 10000);
+
+	async function appendPhotoToFirestore(proveedor, activo, url, meta, gps) {
+		// NO guardar en Firestore aún, solo cuando se envíe a revisión
+		// Esta función queda como placeholder para logging si es necesario
+		console.log('Foto agregada localmente:', url);
+	}
+
+	// Validar formato de medición: NAP (-3.50 a 5.00) o CDO (-23.50 a 5.00) con 2 decimales
+	function validarMedicion(valor, clasificacion = '') {
+		if (!valor || valor.trim() === '') {
+			return { valido: false, mensaje: 'Debe ingresar un valor de medición' };
+		}
+		
+		// Determinar si es NAP o CDO
+		const esNAP = clasificacion && clasificacion.toUpperCase().includes('NAP');
+		const minValor = esNAP ? -3.5 : -23.5;
+		const maxValor = 5.0;
+		
+		// Verificar formato: número opcionalmente negativo, punto, exactamente 2 decimales
+		const regex = /^-?([0-9]{1,2})\.([0-9]{2})$/;
+		if (!regex.test(valor)) {
+			const rangoMsg = esNAP ? '-3.50 a 5.00' : '-23.50 a 5.00';
+			return { valido: false, mensaje: `Formato inválido. Use: ${rangoMsg} (ej: ${esNAP ? '-2.45' : '-22.45'})` };
+		}
+		
+		// Convertir a número para verificar rango
+		const num = parseFloat(valor);
+		if (num < minValor || num > maxValor) {
+			const rangoMsg = esNAP ? '-3.50 y 5.00' : '-23.50 y 5.00';
+			const tipoMsg = esNAP ? ' (NAP)' : ' (CDO)';
+			return { valido: false, mensaje: `Valor fuera de rango${tipoMsg}. Debe estar entre ${rangoMsg}` };
+		}
+		
+		return { valido: true, valor: valor };
+	}
+
+	// Formatear valor de medición automáticamente
+	function formatearMedicion(input) {
+		let valor = input.value.replace(/[^0-9.-]/g, ''); // Solo números, punto y guión
+		
+		// Si empieza con punto, agregar 0
+		if (valor.startsWith('.')) {
+			valor = '0' + valor;
+		}
+		
+		// Si tiene más de un punto, mantener solo el primero
+		const puntos = valor.split('.');
+		if (puntos.length > 2) {
+			valor = puntos[0] + '.' + puntos.slice(1).join('');
+		}
+		
+		// Limitar a 2 decimales
+		if (puntos.length === 2 && puntos[1].length > 2) {
+			valor = puntos[0] + '.' + puntos[1].substring(0, 2);
+		}
+		
+		input.value = valor;
+	}
+
+	async function saveMeasurementToFirestore(payload, retries = 3) {
+		if (!authReady) { 
+			console.error('❌ Auth no lista, no se puede guardar en Firestore'); 
+			throw new Error('Autenticación no lista. Recarga la página.');
+		}
+		const { proveedor, activo } = payload;
+		const id = `${proveedor}::${activo}`;
+		const ref = fbDb.collection('mediciones').doc(id);
+		console.log('📤 Guardando en Firestore:', id);
+		
+		for (let i = 0; i < retries; i++) {
+			try {
+				const timeoutPromise = new Promise((_, reject) => 
+					setTimeout(() => reject(new Error('Timeout')), 15000)
+				);
+				const savePromise = ref.set(
+					{ ...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, 
+					{ merge: true }
+				);
+				await Promise.race([savePromise, timeoutPromise]);
+				console.log('✅ Guardado exitoso en Firestore:', id);
+				return;
+			} catch (e) {
+				console.warn(`⚠️ Intento ${i + 1}/${retries} falló:`, e.message);
+				if (i === retries - 1) {
+					console.error('❌ Error final guardando en Firestore:', e);
+					throw new Error('Error guardando datos. Verifica tu conexión.');
+				}
+				await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Espera progresiva
+			}
+		}
+	}
+
+	async function deleteMeasurementFromFirestore(proveedor, activo) {
+		try {
+			const id = `${proveedor}::${activo}`;
+			const ref = fbDb.collection('mediciones').doc(id);
+			// borrar subcolección fotos
+			const fotosSnap = await ref.collection('fotos').get();
+			const batch = fbDb.batch();
+			fotosSnap.forEach(doc => batch.delete(doc.ref));
+			await batch.commit();
+			await ref.delete();
+		} catch (e) { console.warn('Firestore delete error', e); }
+	}
+
+	function subscribeRealtime() {
+		try {
+			fbDb.collection('mediciones').where('proveedor','==',PROVIDER_KEY)
+			.onSnapshot((snap) => {
+				snap.docChanges().forEach((chg) => {
+					const data = chg.doc.data() || {};
+					const docId = chg.doc.id; // proveedor::activo
+					// Intentar mapear el documento al item local de forma robusta
+					let localId = null;
+					// 1) Coincidencia exacta por docId
+					if (states.has(docId) || items.find(x => x.id === docId)) {
+						localId = docId;
+					} else {
+						// 2) Buscar por campo activo (normalizado)
+						const activoRemote = String(data.activo || '').trim().toLowerCase().replace(/\s+/g,' ');
+						const found = items.find(x => String(x.activo || '').trim().toLowerCase().replace(/\s+/g,' ') === activoRemote);
+						if (found) localId = found.id;
+						else {
+							// 3) Buscar por sufijo del id (por si el proveedor part difiere)
+							const suf = '::' + String(data.activo || '').trim();
+							const found2 = items.find(x => x.id && x.id.endsWith(suf));
+							if (found2) localId = found2.id;
+						}
+					}
+
+					if (!localId) {
+						console.warn('Firestore change for unknown item (fallback failed):', docId, data.activo);
+						return;
+					}
+
+					if (chg.type === 'removed') {
+						states.delete(localId);
+						render();
+						return;
+					}
+
+					const curr = states.get(localId) || { estado: 'pendiente', files: [], remoteUrls: [] };
+					curr.estado = data.estado || curr.estado;
+					if (data.fotos_uris) {
+						const urls = Array.isArray(data.fotos_uris) ? data.fotos_uris : String(data.fotos_uris).split(';').filter(Boolean);
+						curr.remoteUrls = urls;
+					}
+					states.set(localId, curr);
+					render();
+				});
+			});
+		} catch (e) { console.warn('Realtime subscription error', e); }
+	}
+	</script>
+
+	<script>
+	const INITIAL_ITEMS = [{"activo": "PCHSA01A1", "clasificacion": "CDO"}, {"activo": "PCHSA01A3", "clasificacion": "CDO"}, {"activo": "PCHSA02A1", "clasificacion": "CDO"}, {"activo": "PCHSA02A3", "clasificacion": "CDO"}, {"activo": "PCHSA02B1", "clasificacion": "CDO"}, {"activo": "PCHSA02B3", "clasificacion": "CDO"}, {"activo": "PCHSA02C1", "clasificacion": "CDO"}, {"activo": "PCHSA02C3", "clasificacion": "CDO"}, {"activo": "PCHSA02D1", "clasificacion": "CDO"}, {"activo": "PCHSA03A1", "clasificacion": "CDO"}, {"activo": "PCHSA04A1", "clasificacion": "CDO"}, {"activo": "PCHSA04B1", "clasificacion": "CDO"}, {"activo": "PCHSA04C1", "clasificacion": "CDO"}, {"activo": "PCHSA04C3", "clasificacion": "CDO"}, {"activo": "PCHSA04D1", "clasificacion": "CDO"}, {"activo": "PCHSA05A1", "clasificacion": "CDO"}, {"activo": "PCHSA05A3", "clasificacion": "CDO"}, {"activo": "PCHSA05B1", "clasificacion": "CDO"}, {"activo": "PCHSA05B3", "clasificacion": "CDO"}, {"activo": "PCHSA05C1", "clasificacion": "CDO"}, {"activo": "PCHSA05D1", "clasificacion": "CDO"}, {"activo": "PCHSA05D2", "clasificacion": "CDO"}, {"activo": "PCHSA06A1", "clasificacion": "CDO"}, {"activo": "PCHSA06A3", "clasificacion": "CDO"}, {"activo": "PCHSA07A1", "clasificacion": "CDO"}, {"activo": "PCHSA07A3", "clasificacion": "CDO"}, {"activo": "PCHSA07B1", "clasificacion": "CDO"}, {"activo": "PCHSA08A1", "clasificacion": "CDO"}, {"activo": "PCHSA08B1", "clasificacion": "CDO"}, {"activo": "PCHSA09A1", "clasificacion": "CDO"}, {"activo": "PCHSA10A1", "clasificacion": "CDO"}, {"activo": "PCHSA10A3", "clasificacion": "CDO"}, {"activo": "PCHSA10B1", "clasificacion": "CDO"}, {"activo": "PCHSA11A1", "clasificacion": "CDO"}, {"activo": "PCHSA11A3", "clasificacion": "CDO"}, {"activo": "PCHSA11B1", "clasificacion": "CDO"}, {"activo": "PCHSA11B3", "clasificacion": "CDO"}, {"activo": "PCHSA11C1", "clasificacion": "CDO"}, {"activo": "PCHSA12A1", "clasificacion": "CDO"}, {"activo": "PCHSA12A3", "clasificacion": "CDO"}, {"activo": "PCHSA12B1", "clasificacion": "CDO"}, {"activo": "PCHSA13A1", "clasificacion": "CDO"}, {"activo": "PCHSA13A3", "clasificacion": "CDO"}, {"activo": "PCHSA14A1", "clasificacion": "CDO"}, {"activo": "PCHSA14B1", "clasificacion": "CDO"}, {"activo": "PCHSB01A1", "clasificacion": "CDO"}, {"activo": "PCHSB01A3", "clasificacion": "CDO"}, {"activo": "PCHSB01B1", "clasificacion": "CDO"}, {"activo": "PCHSB01B3", "clasificacion": "CDO"}, {"activo": "PCHSB01C1", "clasificacion": "CDO"}, {"activo": "PCHSB01C3", "clasificacion": "CDO"}, {"activo": "PCHSB01D1", "clasificacion": "CDO"}, {"activo": "PCHSB01E1", "clasificacion": "CDO"}, {"activo": "PCHSB01F1", "clasificacion": "CDO"}, {"activo": "PCHSB02A1", "clasificacion": "CDO"}, {"activo": "PCHSB02A3", "clasificacion": "CDO"}, {"activo": "PCHSB02B1", "clasificacion": "CDO"}, {"activo": "PCHSB02B3", "clasificacion": "CDO"}, {"activo": "PCHSB02C1", "clasificacion": "CDO"}, {"activo": "PCHSB03A1", "clasificacion": "CDO"}, {"activo": "PCHSB03A3", "clasificacion": "CDO"}, {"activo": "PCHSB03B1", "clasificacion": "CDO"}, {"activo": "PCHSB03B3", "clasificacion": "CDO"}, {"activo": "PCHSB03C1", "clasificacion": "CDO"}, {"activo": "PCHSB03C3", "clasificacion": "CDO"}, {"activo": "PCHSB03D1", "clasificacion": "CDO"}, {"activo": "PCHSB04A1", "clasificacion": "CDO"}, {"activo": "PCHSB04A3", "clasificacion": "CDO"}, {"activo": "PCHSB04B1", "clasificacion": "CDO"}, {"activo": "PCHSB04B3", "clasificacion": "CDO"}, {"activo": "PCHSB04C1", "clasificacion": "CDO"}, {"activo": "PCHSB05A1", "clasificacion": "CDO"}, {"activo": "PCHSB05A3", "clasificacion": "CDO"}, {"activo": "PCHSB05B1", "clasificacion": "CDO"}, {"activo": "PCHSB05C1", "clasificacion": "CDO"}, {"activo": "PCHSB06A1", "clasificacion": "CDO"}, {"activo": "PCHSB06A3", "clasificacion": "CDO"}, {"activo": "PCHSB06B1", "clasificacion": "CDO"}, {"activo": "PCHSB06B3", "clasificacion": "CDO"}, {"activo": "PCHSB06C1", "clasificacion": "CDO"}, {"activo": "PCHSB06C3", "clasificacion": "CDO"}, {"activo": "PCHSB06D1", "clasificacion": "CDO"}, {"activo": "PCHSB07A1", "clasificacion": "CDO"}, {"activo": "PCHSB07A3", "clasificacion": "CDO"}, {"activo": "PCHSB07B1", "clasificacion": "CDO"}, {"activo": "PCHSB07C1", "clasificacion": "CDO"}, {"activo": "PCHSB07D1", "clasificacion": "CDO"}, {"activo": "PCHSB08A1", "clasificacion": "CDO"}, {"activo": "PCHSB08A3", "clasificacion": "CDO"}, {"activo": "PCHSB08B1", "clasificacion": "CDO"}, {"activo": "PCHSC01A1", "clasificacion": "CDO"}, {"activo": "PCHSC01A3", "clasificacion": "CDO"}, {"activo": "PCHSC01B1", "clasificacion": "CDO"}, {"activo": "PCHSC01B3", "clasificacion": "CDO"}, {"activo": "PCHSC01C1", "clasificacion": "CDO"}, {"activo": "PCHSC01C3", "clasificacion": "CDO"}, {"activo": "PCHSC01D1", "clasificacion": "CDO"}, {"activo": "PCHSC02A1", "clasificacion": "CDO"}, {"activo": "PCHSC02A3", "clasificacion": "CDO"}, {"activo": "PCHSC02B1", "clasificacion": "CDO"}, {"activo": "PCHSC02B3", "clasificacion": "CDO"}, {"activo": "PCHSC02C1", "clasificacion": "CDO"}, {"activo": "PCHSC02C3", "clasificacion": "CDO"}, {"activo": "PCHSC02D1", "clasificacion": "CDO"}, {"activo": "PCHSC02D3", "clasificacion": "CDO"}, {"activo": "PCHSC02E1", "clasificacion": "CDO"}, {"activo": "PCHSC02F1", "clasificacion": "CDO"}, {"activo": "PCHSC02F2", "clasificacion": "CDO"}, {"activo": "PCHSC03A1", "clasificacion": "CDO"}, {"activo": "PCHSC03A3", "clasificacion": "CDO"}, {"activo": "PCHSC03B1", "clasificacion": "CDO"}, {"activo": "PCHSC03B3", "clasificacion": "CDO"}, {"activo": "PCHSC03C1", "clasificacion": "CDO"}, {"activo": "PCHSC03D1", "clasificacion": "CDO"}, {"activo": "PCHSC03D2", "clasificacion": "CDO"}, {"activo": "PCHSC04A1", "clasificacion": "CDO"}, {"activo": "PCHSC04A3", "clasificacion": "CDO"}, {"activo": "PCHSC04B1", "clasificacion": "CDO"}, {"activo": "PCHSC04B3", "clasificacion": "CDO"}, {"activo": "PCHSC04C1", "clasificacion": "CDO"}, {"activo": "PCHSC05A1", "clasificacion": "CDO"}, {"activo": "PCHSC05A3", "clasificacion": "CDO"}, {"activo": "PCHSC05B1", "clasificacion": "CDO"}, {"activo": "PCHSC05B3", "clasificacion": "CDO"}, {"activo": "PCHSC06A1", "clasificacion": "CDO"}, {"activo": "PCHSC06A3", "clasificacion": "CDO"}, {"activo": "PCHSC06B1", "clasificacion": "CDO"}, {"activo": "PCHSC06B3", "clasificacion": "CDO"}, {"activo": "PCHSC07A1", "clasificacion": "CDO"}, {"activo": "PCHSC07B1", "clasificacion": "CDO"}, {"activo": "PCHSD01A1", "clasificacion": "CDO"}, {"activo": "PCHSD01A3", "clasificacion": "CDO"}, {"activo": "PCHSD01B1", "clasificacion": "CDO"}, {"activo": "PCHSD01B3", "clasificacion": "CDO"}, {"activo": "PCHSD01C1", "clasificacion": "CDO"}, {"activo": "PCHSD01D1", "clasificacion": "CDO"}, {"activo": "PCHSD01D3", "clasificacion": "CDO"}, {"activo": "PCHSD02A1", "clasificacion": "CDO"}, {"activo": "PCHSD02A3", "clasificacion": "CDO"}, {"activo": "PCHSD02B1", "clasificacion": "CDO"}, {"activo": "PCHSD02B3", "clasificacion": "CDO"}, {"activo": "PCHSD02C1", "clasificacion": "CDO"}, {"activo": "PCHSD02C3", "clasificacion": "CDO"}, {"activo": "PCHSD02D1", "clasificacion": "CDO"}, {"activo": "PCHSD02D3", "clasificacion": "CDO"}, {"activo": "PCHSD02E1", "clasificacion": "CDO"}, {"activo": "PCHSD02E3", "clasificacion": "CDO"}, {"activo": "PCHSD02F1", "clasificacion": "CDO"}, {"activo": "PCHSD03A1", "clasificacion": "CDO"}, {"activo": "PCHSD03A3", "clasificacion": "CDO"}, {"activo": "PCHSD03B1", "clasificacion": "CDO"}, {"activo": "PCHSD03C1", "clasificacion": "CDO"}, {"activo": "PCHSD04A1", "clasificacion": "CDO"}, {"activo": "PCHSD04B1", "clasificacion": "CDO"}, {"activo": "PCHSD05A1", "clasificacion": "CDO"}, {"activo": "PCHSD05A3", "clasificacion": "CDO"}, {"activo": "PCHSD05B1", "clasificacion": "CDO"}, {"activo": "PCHSD05C1", "clasificacion": "CDO"}, {"activo": "PCHSD06A1", "clasificacion": "CDO"}, {"activo": "PCHSD06A3", "clasificacion": "CDO"}, {"activo": "PCHSD06B1", "clasificacion": "CDO"}, {"activo": "PCHSD06C1", "clasificacion": "CDO"}, {"activo": "PCHSD07A1", "clasificacion": "CDO"}, {"activo": "PCHSD07B1", "clasificacion": "CDO"}, {"activo": "PCHSD07C1", "clasificacion": "CDO"}, {"activo": "PCHSD08A1", "clasificacion": "CDO"}, {"activo": "PCHSD08B1", "clasificacion": "CDO"}, {"activo": "PCHSD09A1", "clasificacion": "CDO"}, {"activo": "PCHSD09A3", "clasificacion": "CDO"}, {"activo": "PCHSD09B1", "clasificacion": "CDO"}, {"activo": "PCHSD09B3", "clasificacion": "CDO"}, {"activo": "PCHSD09C1", "clasificacion": "CDO"}, {"activo": "PCHSD09D1", "clasificacion": "CDO"}, {"activo": "PCHSD10A1", "clasificacion": "CDO"}, {"activo": "PCHSD10A3", "clasificacion": "CDO"}, {"activo": "PCHSD10B1", "clasificacion": "CDO"}, {"activo": "PCHSD10B3", "clasificacion": "CDO"}, {"activo": "PCHSD10C1", "clasificacion": "CDO"}, {"activo": "PCHSD10C3", "clasificacion": "CDO"}, {"activo": "PCHSA01 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA01 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA01 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA02 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA02 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA02 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA03 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA03 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA04 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA04 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA04 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA05 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA05 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA05 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA05 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSA06 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA06 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA07 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA07 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA08 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA08 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA08 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA09 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA09 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA09 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA09 - G-H", "clasificacion": "NAP"}, {"activo": "PCHSA10 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA10 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA11 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA11 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA11 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA11 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSA12 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA12 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA12 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSA12 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSA13 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA13 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA13 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSA14 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSA14 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSA14 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSB01 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB01 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB01 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSB02 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB02 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB03 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB03 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB04 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB04 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB04 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSB05 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB05 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB05 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSB06 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB06 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB07 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB07 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB07 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSB08 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSB08 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSB08 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSB08 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSC01 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC01 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC01 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSC02 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC02 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC02 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSC03 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC03 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC03 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSC04 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC04 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC04 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSC05 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC05 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC06 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC06 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC06 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSC06 - G-H", "clasificacion": "NAP"}, {"activo": "PCHSC06 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSC07 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSC07 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSC07 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSD01 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD01 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD01 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD02 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD02 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD02 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD03 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD03 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD03 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD04 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD04 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD04 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD05 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD05 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD06 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD06 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD06 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSD07 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD07 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD07 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD07 - PRECO - I", "clasificacion": "NAP"}, {"activo": "PCHSD08 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD08 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD09 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD09 - C-D", "clasificacion": "NAP"}, {"activo": "PCHSD09 - E-F", "clasificacion": "NAP"}, {"activo": "PCHSD10 - A-B", "clasificacion": "NAP"}, {"activo": "PCHSD10 - C-D", "clasificacion": "NAP"}];
+	const ALL_CLASSES = ["CDO", "NAP"];
+	const PROVIDER_KEY = "sonal";
+	const PIN_RESET = "3960";
+	const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyDnVKacuGsKljlzkotLUKN5StjW5XyQPl-2nm1FkIqGWGKbNkY36zCmPAb-Y2fr5tlbA/exec";
+
+	// Estado global
+	let items = INITIAL_ITEMS.map((x, idx) => ({ ...x, id: idFor(x), _idx: idx }));
+	let states = new Map(); // id -> state {estado, files:[], notes:[], gps:[], audit:[], validations:{}}
+	let selectedId = null;
+	let currentNoteItem = null;
+	let isOnline = navigator.onLine;
+
+	// Referencias DOM
+	const q = document.getElementById('q');
+	const clearSearch = document.getElementById('clearSearch');
+	const filterClasif = document.getElementById('filterClasif');
+	const filterEstado = document.getElementById('filterEstado');
+	const dateFrom = document.getElementById('dateFrom');
+	const dateTo = document.getElementById('dateTo');
+	const exportBtn = document.getElementById('exportBtn');
+	const listEl = document.getElementById('list');
+	const emptyMsg = document.getElementById('emptyMsg');
+	const errorBanner = document.getElementById('errorBanner');
+	const connectionStatus = document.getElementById('connectionStatus');
+	const lastUpdate = document.getElementById('lastUpdate');
+
+	// Estadísticas
+	const statTotal = document.getElementById('statTotal');
+	const statPendientes = document.getElementById('statPendientes');
+	const statMedidos = document.getElementById('statMedidos');
+	const statProgreso = document.getElementById('statProgreso');
+
+	// Mostrar error en UI
+	function showError(message) {
+		console.error(message);
+		errorBanner.textContent = 'Error: ' + message;
+		errorBanner.classList.remove('hidden');
+	}
+
+	// Firebase como única fuente de verdad - No más IndexedDB
+	function idFor(item) {
+		return PROVIDER_KEY + '::' + String(item.activo || '').trim();
+	}
+
+	// Funciones de utilidad
+	function getCurrentTimestamp() {
+		return new Date().toISOString();
+	}
+
+	function formatDate(dateStr) {
+		return new Date(dateStr).toLocaleString('es-ES');
+	}
+
+	function addAuditLog(itemId, action, details = '') {
+		const st = states.get(itemId) || { estado: 'pendiente', files: [], notes: [], gps: [], audit: [], validations: {} };
+		st.audit = st.audit || [];
+		st.audit.push({
+			timestamp: getCurrentTimestamp(),
+			action: action,
+			details: details,
+			userAgent: navigator.userAgent.substring(0, 50)
+		});
+		states.set(itemId, st);
+	}
+
+	// Geolocalización
+	async function getCurrentLocation() {
+		return new Promise((resolve, reject) => {
+			// Si no es contexto seguro (https o localhost), la geolocalización puede fallar
+			const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.protocol === 'file:';
+			if (!navigator.geolocation) {
+				reject(new Error('Geolocalización no soportada por el navegador'));
+				return;
+			}
+			if (!isSecure) {
+				reject(new Error('Geolocalización requiere HTTPS (o archivo local). Subiremos luego a hosting seguro.'));
+				return;
+			}
+			
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					resolve({
+						lat: position.coords.latitude,
+						lng: position.coords.longitude,
+						accuracy: position.coords.accuracy,
+						timestamp: getCurrentTimestamp()
+					});
+				},
+				(error) => {
+					let msg = 'Error al capturar GPS';
+					if (error.code === error.PERMISSION_DENIED) msg = 'Permiso de ubicación denegado';
+					if (error.code === error.POSITION_UNAVAILABLE) msg = 'Posición no disponible';
+					if (error.code === error.TIMEOUT) msg = 'Tiempo de espera agotado';
+					reject(new Error(msg));
+				},
+				{ enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+			);
+		});
+	}
+
+	// Validaciones de calidad
+	function validatePhotos(files) {
+		const validations = {
+			hasPhotos: files.length > 0,
+			hasMultipleAngles: files.length >= 2,
+			hasGoodQuality: true, // Simplificado por ahora
+			hasVideo: files.some(f => f.type && f.type.startsWith('video/')),
+			hasImages: files.some(f => f.type && f.type.startsWith('image/'))
+		};
+		
+		validations.score = Object.values(validations).filter(Boolean).length;
+		validations.percentage = Math.round((validations.score / Object.keys(validations).length) * 100);
+		
+		return validations;
+	}
+
+	// Exportar a CSV
+	function exportToCSV() {
+		const data = [];
+		for (const item of items) {
+			const st = states.get(item.id) || { estado: 'pendiente', files: [], notes: [], gps: [], audit: [], validations: {} };
+			data.push({
+				'Activo': item.activo,
+				'Clasificación': item.clasificacion,
+				'Estado': st.estado,
+				'Fotos Adjuntas': st.files?.length || 0,
+				'Notas': st.notes?.length || 0,
+				'Última Actualización': st.audit?.[st.audit.length - 1]?.timestamp || '',
+				'GPS': st.gps?.length > 0 ? `${st.gps[st.gps.length - 1].lat}, ${st.gps[st.gps.length - 1].lng}` : '',
+				'Validación': st.validations?.percentage || 0
+			});
+		}
+		
+		const csv = convertToCSV(data);
+		downloadCSV(csv, `mediciones_${PROVIDER_KEY}_${new Date().toISOString().split('T')[0]}.csv`);
+	}
+
+	function convertToCSV(data) {
+		if (data.length === 0) return '';
+		
+		const headers = Object.keys(data[0]);
+		const csvContent = [
+			headers.join(','),
+			...data.map(row => `"${headers.map(h => String(row[h] ?? '').replace(/"/g, '""')).join('","')}"`)
+		].join('\n');
+		
+		return csvContent;
+	}
+
+	function downloadCSV(csv, filename) {
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		const link = document.createElement('a');
+		const url = URL.createObjectURL(blob);
+		link.setAttribute('href', url);
+		link.setAttribute('download', filename);
+		link.style.visibility = 'hidden';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
+
+	// Filtros avanzados
+	function matchesAdvancedFilters(item) {
+		const st = states.get(item.id);
+		
+		// Filtro por fecha
+		if (dateFrom.value || dateTo.value) {
+			const lastUpdate = st?.audit?.[st.audit.length - 1]?.timestamp;
+			if (!lastUpdate) return false;
+			
+			const itemDate = new Date(lastUpdate);
+			if (dateFrom.value && itemDate < new Date(dateFrom.value)) return false;
+			if (dateTo.value && itemDate > new Date(dateTo.value)) return false;
+		}
+		
+		return true;
+	}
+
+	// Actualizar estadísticas
+	function updateStats() {
+		const total = items.length;
+		const pendientes = items.filter(it => {
+			const st = states.get(it.id);
+			return (st?.estado || 'pendiente') === 'pendiente';
+		}).length;
+		const rechazados = items.filter(it => {
+			const st = states.get(it.id);
+			return st?.observacion_rechazo ? true : false;
+		}).length;
+		const medidos = items.filter(it => {
+			const st = states.get(it.id);
+			return (st?.estado || 'pendiente') === 'medido';
+		}).length;
+		const totalEnviados = medidos + rechazados;
+		const aprobacion = totalEnviados > 0 ? Math.round((medidos / totalEnviados) * 100) : 0;
+		const progreso = total > 0 ? Math.round((medidos / total) * 100) : 0;
+		
+		statTotal.textContent = total;
+		statPendientes.textContent = pendientes;
+		statMedidos.textContent = medidos;
+		document.getElementById('statRechazados').textContent = rechazados;
+		document.getElementById('statAprobacion').textContent = aprobacion + '%';
+		statProgreso.textContent = progreso + '%';
+	}
+
+	// Renderizado
+	function hydrateFilters() {
+		for (const c of ALL_CLASSES) {
+			const opt = document.createElement('option');
+			opt.value = c; opt.textContent = c; filterClasif.appendChild(opt);
+		}
+	}
+
+	function render() {
+		const query = (q.value || '').toLowerCase();
+		const clasif = filterClasif.value || '';
+		const est = filterEstado.value || 'pendiente';
+
+		const filtered = items.filter(it => {
+			const st = states.get(it.id);
+			const estado = st?.estado || 'pendiente';
+			
+			// Filtros básicos
+			if (est !== 'todos' && estado !== est) return false;
+			if (clasif && String(it.clasificacion || '').toLowerCase() !== clasif.toLowerCase()) return false;
+			
+			// Filtros avanzados
+			if (!matchesAdvancedFilters(it)) return false;
+			
+			// Búsqueda
+			if (!query) return true;
+			
+			// Buscar en activo, clasificación, notas
+			const searchText = [
+				it.activo,
+				it.clasificacion,
+				...(st?.notes || []).map(n => n.text),
+				...Object.values(it).map(v => String(v))
+			].join(' ').toLowerCase();
+			
+			return searchText.includes(query);
+		});
+
+		listEl.innerHTML = '';
+		if (filtered.length === 0) {
+			emptyMsg.textContent = 'No se encontraron activos con los filtros aplicados.';
+		} else {
+			emptyMsg.textContent = '';
+		}
+		for (const it of filtered) {
+			const st = states.get(it.id);
+			const estado = st?.estado || 'pendiente';
+			const isSelected = selectedId === it.id;
+			const validations = st?.validations || {};
+			
+			const div = document.createElement('div');
+			div.className = 'item';
+			const hasRechazo = st?.observacion_rechazo ? true : false;
+			
+			// Resaltar fila si está rechazada
+			if (hasRechazo) {
+				div.style.borderLeft = '4px solid var(--danger)';
+				div.style.background = '#1a0505';
+			}
+			
+			div.innerHTML = `
+				<div>
+					<div class="item-header">
+						<strong>${it.activo || '(Sin Activo)'}</strong> 
+						<span class="badge ${estado === 'medido' ? 'badge-medido' : 'badge-pendiente'}">${it.clasificacion || ''}</span>
+						${validations.percentage ? `<span class="badge">${validations.percentage}%</span>` : ''}
+						${hasRechazo ? '<span class="badge" style="background:var(--danger);color:#fff;font-weight:bold;">❌ MEDICIÓN RECHAZADA</span>' : ''}
+					</div>
+					<div class="item-meta">
+						Estado: ${estado} | 
+						Fotos: ${st?.files?.length || 0}/1 | 
+						Notas: ${st?.notes?.length || 0} |
+						${st?.gps?.length ? '📍 GPS' : '❌ Sin GPS'}
+					</div>
+				</div>
+				<div class="item-actions">
+					<button class="secondary small" data-id="${it.id}" data-action="ver">${isSelected ? 'Ocultar' : 'Ver'}</button>
+					<button class="warning small" data-id="${it.id}" data-action="note">Nota</button>
+				</div>
+			`;
+			
+			// Panel de detalle
+			const detailDiv = document.createElement('div');
+			detailDiv.className = `item-detail ${isSelected ? 'expanded' : ''}`;
+			detailDiv.id = `detail-${it.id}`;
+			
+			if (isSelected) {
+				setTimeout(() => {
+					try { renderDetail(it, detailDiv); } catch (e) { showError(e.message || e); }
+				}, 0);
+			}
+			
+			listEl.appendChild(div);
+			listEl.appendChild(detailDiv);
+		}
+		
+		updateStats();
+	}
+
+	function safeRender() {
+		try {
+			render();
+		} catch (e) {
+			showError(e.message || e);
+		}
+	}
+
+	function renderDetail(it, container) {
+		const st = states.get(it.id) || { estado: 'pendiente', files: [], notes: [], gps: [], audit: [], validations: {} };
+		const max = 1;
+		const rest = Math.max(0, max - (st.files?.length || 0));
+		const validations = validatePhotos(st.files || []);
+		const isReadOnly = st.estado === 'pendiente_revision' || st.estado === 'medido';
+		
+		// Determinar rango según clasificación
+		const esNAP = it.clasificacion && it.clasificacion.toUpperCase().includes('NAP');
+		const rangoTexto = esNAP ? '-3.50 a 5.00' : '-23.50 a 5.00';
+		const ejemploValor = esNAP ? '-2.45' : '-22.45';
+		const tipoEquipo = esNAP ? '(NAP)' : '(CDO)';
+		
+		container.innerHTML = `
+			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+				<div>
+					<h3>${it.activo || '(Sin Activo)'} <span class="badge">${it.clasificacion || ''}</span></h3>
+					<div class="small">${isReadOnly ? 'Medición en revisión o completada' : 'Adjunta 1 archivo (imagen o video)'}</div>
+			</div>
+			${!isReadOnly ? `<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+				<button class="success" onclick="capturarFoto('${it.id}')">📷 Tomar Foto</button>
+				<label class="btn attach" for="fileInput-${it.id}">📁 Adjuntar (${rest} restante${rest !== 1 ? 's' : ''})</label>
+				<input id="fileInput-${it.id}" type="file" accept="image/*,video/*" ${rest === 0 ? 'disabled' : ''} />
+				<input id="cameraInput-${it.id}" type="file" accept="image/*" capture="environment" style="display:none" />
+			</div>` : ''}
+		</div>			<!-- Observación de rechazo (si existe) -->
+			<div id="rechazo-${it.id}" style="display:none;background:#2d0a0a;border-left:4px solid var(--danger);padding:12px;border-radius:6px;margin-bottom:12px;">
+				<strong style="color:var(--danger);">❌ Medición Rechazada</strong>
+				<div id="rechazo-text-${it.id}" style="margin-top:8px;color:var(--text);"></div>
+			</div>
+			
+			<!-- Fotos -->
+			<div class="photo-section">
+				<div class="thumb-grid" id="thumbs-${it.id}"></div>
+			</div>
+			
+			<!-- GPS -->
+			<div class="gps-info" id="gps-${it.id}">
+				<strong>📍 Ubicación:</strong> 
+				<span id="gps-coords-${it.id}">No capturada</span>
+				${!isReadOnly ? `<button class="small" onclick="captureGPS('${it.id}')">Capturar GPS</button>` : ''}
+			</div>
+			
+			<!-- Notas -->
+			<div class="notes-section">
+				<h4>Notas y Comentarios</h4>
+				<div id="notes-${it.id}"></div>
+			</div>
+			
+			<!-- Auditoría -->
+			<div class="audit-log">
+				<strong>Historial:</strong>
+				<div id="audit-${it.id}"></div>
+			</div>
+			
+		<!-- Valor de medición -->
+		<div class="form-group">
+			<label>Valor de medición:</label>
+			<input id="valorMedicion-${it.id}" type="text" placeholder="Ej: ${ejemploValor}" maxlength="6" value="${st.valor_medicion || ''}" ${isReadOnly ? 'readonly' : ''} style="font-family: monospace;" />
+			<small class="small" style="color:var(--muted);display:block;margin-top:4px;">Formato ${tipoEquipo}: ${rangoTexto} (ej: ${ejemploValor})</small>
+		</div>
+			
+			<!-- Acciones -->
+			${!isReadOnly ? `<div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+				<button id="markMedido-${it.id}" ${st.files?.length ? '' : 'disabled'} class="success">
+					✅ Enviar a Revisión
+				</button>
+				<button class="danger" id="reset-${it.id}">🔄 Reiniciar</button>
+			</div>` : `<div style="margin-top: 16px; padding: 12px; background: #2d2d2d; border-radius: 6px; text-align: center;">
+				<strong>Estado: ${st.estado === 'pendiente_revision' ? '🟡 En Revisión' : '✅ Medido'}</strong>
+			</div>`}
+		`;
+
+		// Configurar eventos solo si no es readonly
+		if (!isReadOnly) {
+			setupDetailEvents(it, container);
+		}
+		
+		// Renderizar contenido existente
+		refreshThumbs(it.id, isReadOnly);
+		refreshNotes(it.id);
+		refreshGPS(it.id);
+		refreshAudit(it.id);
+		refreshRechazo(it.id);
+	}
+	
+	function refreshRechazo(itemId) {
+		const rechazoDiv = document.getElementById(`rechazo-${itemId}`);
+		const rechazoText = document.getElementById(`rechazo-text-${itemId}`);
+		if (!rechazoDiv || !rechazoText) return;
+		
+		const st = states.get(itemId);
+		if (st?.observacion_rechazo) {
+			rechazoText.innerHTML = `<strong>Fecha:</strong> ${st.fecha_rechazo ? new Date(st.fecha_rechazo).toLocaleString('es-ES') : 'N/A'}<br/><strong>Motivo:</strong> ${st.observacion_rechazo}`;
+			rechazoDiv.style.display = 'block';
+		} else {
+			rechazoDiv.style.display = 'none';
+		}
+	}
+
+	function setupDetailEvents(it, container) {
+		const input = document.getElementById(`fileInput-${it.id}`);
+		const cameraInput = document.getElementById(`cameraInput-${it.id}`);
+		const btnMedido = document.getElementById(`markMedido-${it.id}`);
+		const btnReset = document.getElementById(`reset-${it.id}`);
+		const valorMedicionInput = document.getElementById(`valorMedicion-${it.id}`);
+		
+		// Event listener para formatear automáticamente el input de medición
+		valorMedicionInput?.addEventListener('input', (e) => {
+			formatearMedicion(e.target);
+		});
+		
+		// Función compartida para procesar archivos (funciona para adjuntar Y capturar)
+		const processFiles = async (ev) => {
+			const files = Array.from(ev.target.files || []);
+			if (!files.length) return;
+			
+			const st = states.get(it.id) || { estado: 'pendiente', files: [], notes: [], gps: [], audit: [], validations: {} };
+			const available = Math.max(0, 1 - (st.files?.length || 0));
+			
+			if (available === 0) {
+				alert('Ya adjuntaste 1 foto. Elimínala primero si deseas cambiarla.');
+				ev.target.value = ''; // Limpiar input
+				return;
+			}
+			
+			const take = files.slice(0, available);
+			
+			// Capturar GPS automáticamente (no bloqueante)
+			let lastGPS = null;
+			try { lastGPS = await getCurrentLocation(); st.gps = st.gps || []; st.gps.push(lastGPS); } catch {}
+			
+			for (const f of take) {
+				// Guardado local siempre
+				const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
+				(st.files = st.files || []).push({ name: f.name, type: f.type, size: f.size, dataUrl, timestamp: getCurrentTimestamp() });
+				
+				// Intentar subir online (Drive via Apps Script) y registrar en Firestore
+				if (isOnline && WEBAPP_URL) {
+					try {
+						const up = await uploadPhotoOnline({ proveedor: PROVIDER_KEY, activo: it.activo, file: f, gps: lastGPS });
+						console.log('📤 Resultado upload:', up);
+						if (up?.success && up?.thumbnailUrl) {
+							(st.remoteUrls = st.remoteUrls || []).push(up.thumbnailUrl);
+							console.log('✅ Foto subida correctamente:', up.thumbnailUrl);
+						} else {
+							console.warn('❌ Error en upload:', up);
+						}
+					} catch (e) {
+						console.warn('No se pudo subir foto ahora, quedará local para sincronizar:', e);
+					}
+				}
+			}
+			
+			st.validations = validatePhotos(st.files);
+			// No guardar localmente, solo en memoria hasta enviar a revisión
+			states.set(it.id, st);
+			
+			const btn = document.getElementById(`markMedido-${it.id}`);
+			if (btn) btn.removeAttribute('disabled');
+			
+			refreshThumbs(it.id);
+			refreshGPS(it.id);
+			safeRender();
+		};
+		
+		// Ambos inputs usan la misma función
+		input?.addEventListener('change', processFiles);
+		cameraInput?.addEventListener('change', processFiles);
+
+		btnMedido?.addEventListener('click', async () => {
+			const st = states.get(it.id);
+			console.log('🔍 Estado actual:', st);
+			
+			if (!st.files || st.files.length === 0) { 
+				alert('Debes adjuntar al menos una foto o video antes de enviar a revisión.'); 
+				return; 
+			}
+			if (!isOnline || !WEBAPP_URL) { 
+				alert('Sin conexión. No se puede sincronizar ahora.'); 
+				return; 
+			}
+			
+			const valorMedicionEl = document.getElementById(`valorMedicion-${it.id}`);
+			const valor_medicion = valorMedicionEl?.value?.trim() || '';
+			
+			// Validar formato de medición (pasando clasificación para determinar rango)
+			const validacion = validarMedicion(valor_medicion, it.clasificacion);
+			if (!validacion.valido) {
+				alert(validacion.mensaje);
+				valorMedicionEl?.focus();
+				return;
+			}
+			
+			try {
+				const fotosUrls = (st.remoteUrls || []).join(';');
+				console.log('📸 URLs de fotos:', fotosUrls);
+				console.log('📸 Cantidad de remote URLs:', st.remoteUrls?.length || 0);
+				
+				if (!fotosUrls || fotosUrls.length === 0) {
+					alert('⚠️ Las fotos no se han subido correctamente a Drive. Intenta de nuevo.');
+					return;
+				}
+				
+				const payload = {
+					proveedor: PROVIDER_KEY,
+					activo: it.activo,
+					clasificacion: it.clasificacion,
+					estado: 'pendiente_revision',
+					fecha_medicion: getCurrentTimestamp(),
+					fotos_cantidad: st.files.length,
+					fotos_uris: fotosUrls,
+					valor_medicion: valor_medicion,
+					notas_texto: (st.notes || []).map(n=>`${n.type}:${n.text}`).join(' | '),
+					gps_lat: st.gps?.length ? st.gps[st.gps.length-1].lat : '',
+					gps_lng: st.gps?.length ? st.gps[st.gps.length-1].lng : '',
+					gps_precision_m: st.gps?.length ? st.gps[st.gps.length-1].accuracy : '',
+					dispositivo: navigator.userAgent.substring(0,80),
+					version_app: 'advanced-1.0',
+					audit: [{
+						timestamp: getCurrentTimestamp(),
+						actor: 'proveedor',
+						action: 'ENVIADO_A_REVISION',
+						details: `${st.files.length} fotos`
+					}]
+				};
+				
+				console.log('📦 Payload a enviar:', payload);
+				
+				// Guardar en Firestore con estado pendiente_revision
+				await saveMeasurementToFirestore(payload);
+
+				st.estado = 'pendiente_revision';
+				st.valor_medicion = valor_medicion;
+			// Limpiar observación de rechazo al reenviar
+			delete st.observacion_rechazo;
+			delete st.fecha_rechazo;
+			states.set(it.id, st);
+			alert('✅ Medición enviada a revisión correctamente.');
+			safeRender();
+			} catch(e) {
+				console.error('❌ Error completo:', e);
+				alert('Error al enviar a revisión: ' + (e.message || e));
+			}
+		});
+		
+		btnReset?.addEventListener('click', async () => {
+			const pin = prompt('Ingresa el PIN para reiniciar:');
+			if (pin !== PIN_RESET) {
+				alert('PIN incorrecto. No se puede reiniciar.');
+				return;
+			}
+			
+			if (!confirm('¿Estás seguro de que quieres reiniciar este activo? Se perderán todas las fotos adjuntas.')) {
+				return;
+			}
+			
+			const st = states.get(it.id);
+			st.estado = 'pendiente';
+			st.files = [];
+			st.notes = [];
+			st.gps = [];
+			st.validations = {};
+			st.audit = []; // Limpiar historial local
+			st.remoteUrls = []; // Limpiar URLs remotas
+			delete st.valor_medicion;
+			delete st.observacion_rechazo;
+			delete st.fecha_rechazo;
+			states.set(it.id, st);
+			renderDetail(it, container);
+			safeRender();
+			// Eliminar en Firestore para reflejar en tiempo real
+			deleteMeasurementFromFirestore(PROVIDER_KEY, it.activo);
+		});
+	}
+
+	function refreshThumbs(itemId, isReadOnly = false) {
+		const thumbs = document.getElementById(`thumbs-${itemId}`);
+		if (!thumbs) return;
+		
+		const st = states.get(itemId);
+		const files = st?.files || [];
+		
+		thumbs.innerHTML = '';
+		for (const [idx, f] of files.entries()) {
+			const el = document.createElement('div');
+			el.className = 'thumb';
+			
+			if ((f.type || '').startsWith('video/')) {
+				el.innerHTML = `<video src="${f.dataUrl}" muted></video>`;
+			} else {
+				el.innerHTML = `<img src="${f.dataUrl}" alt="adjunto" />`;
+			}
+			
+			const info = document.createElement('div');
+			info.className = 'thumb-info';
+			info.textContent = f.name.substring(0, 10) + '...';
+			el.appendChild(info);
+			
+			if (!isReadOnly) {
+				const del = document.createElement('button');
+				del.textContent = '×';
+				del.className = 'danger';
+				del.style.position = 'absolute';
+				del.style.top = '2px';
+				del.style.right = '2px';
+				del.onclick = async () => {
+				st.files.splice(idx, 1);
+				st.validations = validatePhotos(st.files);
+				states.set(itemId, st);
+				refreshThumbs(itemId);
+				safeRender();
+				};
+				el.appendChild(del);
+			}
+			thumbs.appendChild(el);
+		}
+	}
+
+	function refreshNotes(itemId) {
+		const notesEl = document.getElementById(`notes-${itemId}`);
+		if (!notesEl) return;
+		
+		const st = states.get(itemId);
+		const notes = st?.notes || [];
+		
+		notesEl.innerHTML = '';
+		for (const note of notes) {
+			const div = document.createElement('div');
+			div.className = 'note-item';
+			div.innerHTML = `
+				<div><strong>${note.type}:</strong> ${note.text}</div>
+				<div class="note-timestamp">${formatDate(note.timestamp)}</div>
+			`;
+			notesEl.appendChild(div);
+		}
+	}
+
+	function refreshGPS(itemId) {
+		const gpsEl = document.getElementById(`gps-coords-${itemId}`);
+		if (!gpsEl) return;
+		
+		const st = states.get(itemId);
+		const gps = st?.gps || [];
+		
+		if (gps.length > 0) {
+			const last = gps[gps.length - 1];
+			gpsEl.innerHTML = `
+				<span class="gps-coords">${last.lat.toFixed(6)}, ${last.lng.toFixed(6)}</span>
+				<span class="small">(Precisión: ±${Math.round(last.accuracy)}m)</span>
+			`;
+		} else {
+			gpsEl.textContent = 'No capturada';
+		}
+	}
+
+	function refreshAudit(itemId) {
+		const auditEl = document.getElementById(`audit-${itemId}`);
+		if (!auditEl) return;
+		
+		const st = states.get(itemId);
+		const audit = st?.audit || [];
+		
+		auditEl.innerHTML = '';
+		for (const entry of audit.slice(-5)) { // Últimos 5
+			const div = document.createElement('div');
+			div.className = 'small';
+			div.textContent = `${formatDate(entry.timestamp)} - ${entry.action} ${entry.details ? ': ' + entry.details : ''}`;
+			auditEl.appendChild(div);
+		}
+	}
+
+	// Funciones globales
+	window.capturarFoto = function(itemId) {
+		const input = document.getElementById(`cameraInput-${itemId}`);
+		if (input) {
+			input.click();
+			// El evento change se maneja igual que fileInput
+		}
+	};
+	
+	window.captureGPS = async function(itemId) {
+		try {
+			const location = await getCurrentLocation();
+		const st = states.get(itemId) || { estado: 'pendiente', files: [], notes: [], gps: [], audit: [], validations: {} };
+		st.gps = st.gps || [];
+		st.gps.push(location);
+		states.set(itemId, st);
+		refreshGPS(itemId);
+		} catch (error) {
+			alert('Error al capturar GPS: ' + error.message);
+		}
+	};
+
+	window.closeModal = function(modalId) {
+		document.getElementById(modalId).style.display = 'none';
+	};
+
+	window.saveNote = function() {
+		if (!currentNoteItem) return;
+		
+		const type = document.getElementById('noteType').value;
+		const text = document.getElementById('noteText').value.trim();
+		
+		if (!text) {
+			alert('Por favor ingresa un comentario');
+			return;
+		}
+		
+		const st = states.get(currentNoteItem);
+		st.notes = st.notes || [];
+		st.notes.push({
+			type: type,
+			text: text,
+			timestamp: getCurrentTimestamp()
+		});
+		
+		saveState({ id: currentNoteItem, provider: PROVIDER_KEY, ...st });
+		addAuditLog(currentNoteItem, 'NOTA_AGREGADA', `${type}: ${text.substring(0, 30)}...`);
+		
+		closeModal('notesModal');
+		document.getElementById('noteText').value = '';
+		refreshNotes(currentNoteItem);
+		safeRender();
+	};
+
+	async function postForm(url, payload) {
+		const fd = new FormData();
+		for (const [k,v] of Object.entries(payload)) {
+			fd.append(k, v == null ? '' : String(v));
+		}
+		console.log('📤 Enviando a Apps Script:', payload);
+		const resp = await fetch(url, { method: 'POST', body: fd, mode: 'cors' });
+		console.log('📥 Respuesta HTTP:', resp.status, resp.statusText);
+		
+		try {
+			const text = await resp.text();
+			console.log('📥 Texto respuesta:', text);
+			const parsed = JSON.parse(text);
+			console.log('📥 JSON parseado:', parsed);
+			return parsed;
+		} catch (e) {
+			console.warn('❌ Error parseando respuesta:', e);
+			return { success: false, error: 'Error parseando respuesta del servidor' };
+		}
+	}
+
+	async function uploadPhotoOnline({ proveedor, activo, file, gps }) {
+		if (!isOnline) throw new Error('Sin conexión: no se puede subir foto');
+		const base64 = await new Promise(res => {
+			const r = new FileReader();
+			r.onload = () => res(String(r.result).split(',')[1]);
+			r.readAsDataURL(file);
+		});
+		const result = await postForm(WEBAPP_URL, {
+			action: 'uploadPhoto', proveedor, activo,
+			fileName: file.name, mimeType: file.type, base64Data: base64,
+			gps_lat: gps?.lat ?? '', gps_lng: gps?.lng ?? '', device: navigator.userAgent
+		});
+		console.log('📤 Respuesta del Apps Script:', result);
+		return result;
+	}
+
+	// Event listeners
+	listEl.addEventListener('click', (ev) => {
+		const btn = ev.target.closest('button');
+		if (!btn) return;
+		
+		const id = btn.dataset.id;
+		const action = btn.dataset.action;
+		const it = items.find(x => x.id === id);
+		if (!it) return;
+		
+		if (action === 'ver') {
+			if (selectedId === id) {
+				selectedId = null;
+			} else {
+				selectedId = id;
+			}
+			safeRender();
+		} else if (action === 'note') {
+			currentNoteItem = id;
+			document.getElementById('notesModal').style.display = 'block';
+		}
+	});
+
+	q.addEventListener('input', safeRender);
+	clearSearch.addEventListener('click', () => {
+		q.value = '';
+		safeRender();
+	});
+	filterClasif.addEventListener('change', safeRender);
+	filterEstado.addEventListener('change', safeRender);
+	
+	// Listener para real-time de Firestore
+	let unsubscribe = null;
+	function subscribeRealtime() {
+		if (!authReady) {
+			setTimeout(subscribeRealtime, 500);
+			return;
+		}
+
+		// Cancelar listener anterior si existe
+		if (unsubscribe) {
+			try { unsubscribe(); } catch (e) { console.warn('Error cancelando listener', e); }
+		}
+
+		console.log('🔔 Iniciando listener de Firestore para:', PROVIDER_KEY);
+
+		try {
+			unsubscribe = fbDb.collection('mediciones')
+				.where('proveedor', '==', PROVIDER_KEY)
+				.onSnapshot(
+					{ includeMetadataChanges: false },
+					snap => {
+						console.log(`🔄 Cambios recibidos: ${snap.docChanges().length}`);
+						snap.docChanges().forEach(change => {
+							const doc = change.doc;
+							const data = doc.data() || {};
+							const docId = doc.id; // formato: proveedor::activo
+							// Búsqueda robusta del item local
+							let localId = null;
+							if (states.has(docId) || items.find(x => x.id === docId)) {
+								localId = docId;
+							} else {
+								const activoRemote = String(data.activo || '').trim().toLowerCase().replace(/\s+/g,' ');
+								const found = items.find(x => String(x.activo || '').trim().toLowerCase().replace(/\s+/g,' ') === activoRemote);
+								if (found) localId = found.id;
+								else {
+									const suf = '::' + String(data.activo || '').trim();
+									const found2 = items.find(x => x.id && x.id.endsWith(suf));
+									if (found2) localId = found2.id;
+								}
+							}
+							if (!localId) {
+								console.warn('Firestore change for unknown item (fallback failed):', docId, data.activo);
+								return;
+							}
+
+							const st = states.get(localId) || { estado: 'pendiente', files: [], notes: [], gps: [], validations: {}, remoteUrls: [] };
+
+							if (change.type === 'removed') {
+								states.delete(localId);
+								return;
+							}
+
+							st.estado = data.estado || st.estado;
+							if (data.fotos_uris) {
+								const urls = Array.isArray(data.fotos_uris) ? data.fotos_uris : String(data.fotos_uris).split(';').filter(Boolean);
+								st.remoteUrls = urls;
+							}
+
+							if (data.estado === 'pendiente' && data.observacion_rechazo) {
+								st.observacion_rechazo = data.observacion_rechazo;
+								st.fecha_rechazo = data.fecha_rechazo;
+							} else if (data.estado === 'medido' || data.estado === 'pendiente_revision') {
+								delete st.observacion_rechazo;
+								delete st.fecha_rechazo;
+							}
+
+							states.set(localId, st);
+						});
+						safeRender();
+						lastUpdate.textContent = formatDate(getCurrentTimestamp());
+					},
+					err => {
+						console.error('❌ Error en listener de Firestore:', err);
+						connectionStatus.textContent = '🔴 Error de conexión';
+						showError('Error de conexión con Firebase. Recargando...');
+						setTimeout(() => {
+							if (navigator.onLine) {
+								window.location.reload();
+							}
+						}, 5000);
+					}
+				);
+		} catch (e) {
+			console.error('❌ Error configurando listener:', e);
+			showError('Error al configurar tiempo real.');
+		}
+	}
+	dateFrom.addEventListener('change', safeRender);
+	dateTo.addEventListener('change', safeRender);
+	exportBtn.addEventListener('click', exportToCSV);
+
+	// Monitoreo de conexión
+	window.addEventListener('online', () => {
+		isOnline = true;
+		connectionStatus.textContent = '🟢 Conectado';
+	});
+	
+	window.addEventListener('offline', () => {
+		isOnline = false;
+		connectionStatus.textContent = '🔴 Sin conexión';
+	});
+
+	// Limpiar listener al cerrar
+	window.addEventListener('beforeunload', () => {
+		if (unsubscribe) {
+			try { unsubscribe(); } catch (e) {}
+		}
+	});
+	
+	// Inicialización - 100% Firebase, sin IndexedDB
+	(async function init() {
+		try {
+			hydrateFilters();
+			// Iniciar listener de Firebase en tiempo real
+			subscribeRealtime();
+			safeRender();
+			lastUpdate.textContent = formatDate(getCurrentTimestamp());
+			if (!INITIAL_ITEMS || INITIAL_ITEMS.length === 0) {
+				showError('No se encontraron activos en este proveedor. Verifica el Excel.');
+			}
+		} catch (e) {
+			showError(e.message || e);
+		}
+	})();
+	</script>
+</body>
+</html>
